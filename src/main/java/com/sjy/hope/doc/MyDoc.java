@@ -7,6 +7,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.javadoc.Javadoc;
 import com.github.javaparser.javadoc.JavadocBlockTag;
@@ -43,18 +44,18 @@ public class MyDoc {
         List<Node> methodNodes = clazzNode.getChildNodes().stream().filter(node -> node instanceof MethodDeclaration).collect(Collectors.toList());
         for (Node methodNode : methodNodes) {
             MethodDeclaration methodDeclaration = (MethodDeclaration) methodNode;
-            Javadoc javadoc = JavaParser.parseJavadoc(methodDeclaration.getComment().get().getContent());
+            Javadoc javadoc = JavaParser.parseJavadoc(methodDeclaration.getComment().orElse(new JavadocComment("")).getContent());
             List<JavadocBlockTag> blockTags = javadoc.getBlockTags();
 
             ApiDoc apiDoc = new ApiDoc();
             List<ApiParam> params = new ArrayList<>();
             for (JavadocBlockTag blockTag : blockTags) {
                 if (blockTag.getType().equals(JavadocBlockTag.Type.PARAM)) {
-                    Parameter parameter = methodDeclaration.getParameterByName(blockTag.getName().get()).get();
-                    Optional<ApiParam> param = getParam(parameter, "RequestParam", "RequestHeader");
-                    if (param.isPresent()) {
-                        params.add(param.get());
-                    }
+                    methodDeclaration.getParameterByName(blockTag.getName().get()).ifPresent(parameter -> {
+                        getParam(parameter, "RequestParam", "RequestHeader").ifPresent(apiParam -> {
+                            params.add(apiParam);
+                        });
+                    });
                 }
             }
 
