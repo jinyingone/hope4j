@@ -14,6 +14,7 @@ import com.github.javaparser.javadoc.JavadocBlockTag;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  * @author jy
  * @create 2019-01-24 下午5:26
  **/
+@Slf4j
 public class MyDoc {
     public static void main(String[] args) throws IOException {
         createDoc();
@@ -48,17 +50,15 @@ public class MyDoc {
             List<JavadocBlockTag> blockTags = javadoc.getBlockTags();
 
             ApiDoc apiDoc = new ApiDoc();
-            List<ApiParam> params = new ArrayList<>();
+
+            Map<String, JavadocBlockTag> paramDocs = new HashMap<>(8);
             for (JavadocBlockTag blockTag : blockTags) {
                 if (blockTag.getType().equals(JavadocBlockTag.Type.PARAM)) {
-                    methodDeclaration.getParameterByName(blockTag.getName().get()).ifPresent(parameter -> {
-                        getParam(parameter, "RequestParam", "RequestHeader").ifPresent(apiParam -> {
-                            params.add(apiParam);
-                        });
-                    });
+                    paramDocs.put(blockTag.getTagName(), blockTag);
                 }
             }
 
+            List<ApiParam> params = getMethodParams(methodDeclaration);
             Optional<AnnotationExpr> MethodRequestMapping = methodDeclaration.getAnnotationByName("RequestMapping");
             String api = getApi(clazzRequestMapping, MethodRequestMapping);
 
@@ -73,6 +73,62 @@ public class MyDoc {
             System.out.println(apiDoc);
 
         }
+    }
+
+    private static List<ApiParam> getMethodParams(MethodDeclaration methodDeclaration) {
+        NodeList<Parameter> parameters = methodDeclaration.getParameters();
+        List<ApiParam> apiParams = new ArrayList<>(8);
+        parameters.forEach(parameter -> {
+            NodeList<AnnotationExpr> annotations = parameter.getAnnotations();
+            annotations.forEach(annotationExpr -> {
+                if (annotationExpr.getName().getIdentifier().equals("RequestParam")) {
+                    ApiParam apiParam = new ApiParam();
+                    if (annotationExpr.isNormalAnnotationExpr()) {
+                        NormalAnnotationExpr normalAnnotationExpr = annotationExpr.asNormalAnnotationExpr();
+                        NodeList<MemberValuePair> pairs = normalAnnotationExpr.getPairs();
+                        pairs.forEach(memberValuePair -> {
+                            Expression value = memberValuePair.getValue();
+                            String name = memberValuePair.getName().getIdentifier();
+                            if ("value".equals(name) || "name".equals(name)) {
+                                if (value.isStringLiteralExpr()) {
+                                    apiParam.setName(value.asStringLiteralExpr().getValue());
+                                    apiParam.setType(parameter.getType().toString());
+                                    apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
+                                } else {
+                                    throw new RuntimeException(value.toString());
+                                }
+                            } else if ("required".equals(name)) {
+                                BooleanLiteralExpr booleanLiteralExpr = value.asBooleanLiteralExpr();
+                                apiParam.setRequired(booleanLiteralExpr.getValue());
+                                apiParam.setName(parameter.getNameAsString());
+                                apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
+                            } else {
+                                log.warn("不支持的注解" + annotationExpr.getName());
+                            }
+                        });
+                    } else if (annotationExpr.isSingleMemberAnnotationExpr()) {
+                        Expression value = annotationExpr.asSingleMemberAnnotationExpr().getMemberValue();
+                        apiParam.setName(value.asStringLiteralExpr().getValue());
+                        apiParam.setType(parameter.getType().toString());
+                        apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
+                    } else if (annotationExpr.isMarkerAnnotationExpr()) {
+                        apiParam.setName(parameter.getNameAsString());
+                        apiParam.setType(parameter.getType().toString());
+                        apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
+                    } else {
+                        log.warn("不支持的注解" + annotationExpr.getName());
+                    }
+                    apiParams.add(apiParam);
+                } else if (annotationExpr.getName().getIdentifier().equals("RequestHeader")) {
+                    System.out.println(annotationExpr);
+                } else {
+                    log.warn("不支持的注解" + annotationExpr.getName());
+                }
+
+            });
+
+        });
+        return apiParams;
     }
 
     private static String getHttpMethod(Optional<AnnotationExpr> clazzRequestMapping, Optional<AnnotationExpr> methodRequestMapping, String defalut) {
@@ -157,50 +213,6 @@ public class MyDoc {
             }
         }
         return Optional.empty();
-    }
-
-    private static Optional<ApiParam> getParam(Parameter parameter, String... annotations) {
-        for (String annotation : annotations) {
-            Optional<AnnotationExpr> annotationByNameOp = parameter.getAnnotationByName(annotation);
-            if (annotationByNameOp.isPresent()) {
-                AnnotationExpr annotationExpr = annotationByNameOp.get();
-                ApiParam apiParam = new ApiParam();
-                if (annotationExpr instanceof SingleMemberAnnotationExpr) {
-                    Expression memberValue = ((SingleMemberAnnotationExpr) annotationExpr).getMemberValue();
-                    if (memberValue.isStringLiteralExpr()) {
-                        apiParam.setName(memberValue.asStringLiteralExpr().getValue());
-                    }
-                } else if (annotationExpr instanceof NormalAnnotationExpr) {
-                    NodeList<MemberValuePair> pairs = ((NormalAnnotationExpr) annotationExpr).getPairs();
-                    for (MemberValuePair pair : pairs) {
-                        if (pair.getName().getIdentifier().equals("required")) {
-                            apiParam.setRequired(pair.getValue().asBooleanLiteralExpr().getValue());
-                        } else if (pair.getName().getIdentifier().equals("value")) {
-                            apiParam.setName(pair.getValue().asStringLiteralExpr().getValue());
-                        }
-                    }
-                } else {
-                    apiParam.setName(parameter.getNameAsString());
-                    apiParam.setRequired(true);
-                    apiParam.setFromAnnotation(annotation);
-                }
-                apiParam.setType(parameter.getTypeAsString());
-                apiParam.setFromAnnotation(annotation);
-                return Optional.of(apiParam);
-            }
-        }
-
-
-        //处理注解的参数
-        ApiParam apiParam = new ApiParam();
-        apiParam.setType(parameter.getTypeAsString());
-        apiParam.setName(parameter.getNameAsString());
-        apiParam.setRequired(true);
-
-
-        return Optional.of(apiParam);
-
-
     }
 
 
