@@ -14,7 +14,9 @@ import com.github.javaparser.javadoc.Javadoc;
 import com.github.javaparser.javadoc.JavadocBlockTag;
 import com.sjy.hope.doc.annotations.Api;
 import com.sjy.hope.doc.annotations.RequestParms;
-import lombok.Data;
+import com.sjy.hope.doc.annotations.parser.ParamPaser;
+import com.sjy.hope.doc.model.ApiDoc;
+import com.sjy.hope.doc.model.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -49,20 +51,12 @@ public class MyDocSns {
         List<ApiDoc> deprecateds = all.stream().filter(apiDoc -> apiDoc.isDeprecated()).collect(Collectors.toList());
         deprecateds.sort(Comparator.comparing(ApiDoc::getPath));
         System.out.println("过期的接口数量:" + deprecateds.size());
-        deprecateds.forEach(apiDoc -> System.out.println("${appid}" + apiDoc.getPath()));
+        deprecateds.forEach(System.out::println);
 
         List<ApiDoc> unDeprecateds = all.stream().filter(apiDoc -> !apiDoc.isDeprecated()).collect(Collectors.toList());
         unDeprecateds.sort(Comparator.comparing(ApiDoc::getPath));
         System.out.println("推荐使用接口数量:" + unDeprecateds.size());
-        unDeprecateds.forEach(apiDoc -> {
-            if (apiDoc.getPath().startsWith("/{appid}")) {
-                System.out.println(apiDoc.getPath());
-            } else if (apiDoc.getPath().startsWith("/*")) {
-                System.out.println(apiDoc.getPath().replace("/*", "/${appid}"));
-            } else {
-                System.out.println("/${appid}" + apiDoc.getPath());
-            }
-        });
+        unDeprecateds.forEach(System.out::println);
 
 
     }
@@ -129,13 +123,14 @@ public class MyDocSns {
             String api = getApi(clazzRequestMapping, methodRequestMapping);
 
             String httpMethod = getHttpMethod(clazzRequestMapping, methodRequestMapping, "");
-
+            boolean isDeprecated = clazzNode.getAnnotationByName(Deprecated.class.getSimpleName()).isPresent()
+                    || methodDeclaration.getAnnotationByName(Deprecated.class.getSimpleName()).isPresent();
 
             apiDoc.setHttpMethod(httpMethod);
             apiDoc.setPath(api);
             apiDoc.setTitle(javadoc.getDescription().toText());
             apiDoc.setParams(params);
-            apiDoc.setDeprecated(methodDeclaration.getAnnotationByName(Deprecated.class.getSimpleName()).isPresent());
+            apiDoc.setDeprecated(isDeprecated);
             docs.add(apiDoc);
         }
         return docs;
@@ -147,52 +142,19 @@ public class MyDocSns {
         parameters.forEach(parameter -> {
             NodeList<AnnotationExpr> annotations = parameter.getAnnotations();
             annotations.forEach(annotationExpr -> {
-                if (annotationExpr.getName().getIdentifier().equals("RequestParam")) {
-                    ApiParam apiParam = new ApiParam();
-                    if (annotationExpr.isNormalAnnotationExpr()) {
-                        NormalAnnotationExpr normalAnnotationExpr = annotationExpr.asNormalAnnotationExpr();
-                        NodeList<MemberValuePair> pairs = normalAnnotationExpr.getPairs();
-                        pairs.forEach(memberValuePair -> {
-                            Expression value = memberValuePair.getValue();
-                            String name = memberValuePair.getName().getIdentifier();
-                            if ("value".equals(name) || "name".equals(name)) {
-                                if (value.isStringLiteralExpr()) {
-                                    apiParam.setName(value.asStringLiteralExpr().getValue());
-                                    apiParam.setType(parameter.getType().toString());
-                                    apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
-                                } else {
-                                    throw new RuntimeException(value.toString());
-                                }
-                            } else if ("required".equals(name)) {
-                                BooleanLiteralExpr booleanLiteralExpr = value.asBooleanLiteralExpr();
-                                apiParam.setRequired(booleanLiteralExpr.getValue());
-                                apiParam.setName(parameter.getNameAsString());
-                                apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
-                            } else {
-                                log.warn("不支持的注解" + annotationExpr.getName());
-                            }
-                        });
-                    } else if (annotationExpr.isSingleMemberAnnotationExpr()) {
-                        Expression value = annotationExpr.asSingleMemberAnnotationExpr().getMemberValue();
-                        apiParam.setName(value.asStringLiteralExpr().getValue());
-                        apiParam.setType(parameter.getType().toString());
-                        apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
-                    } else if (annotationExpr.isMarkerAnnotationExpr()) {
-                        apiParam.setName(parameter.getNameAsString());
-                        apiParam.setType(parameter.getType().toString());
-                        apiParam.setFromAnnotation(annotationExpr.getName().getIdentifier());
-                    } else {
-                        log.warn("不支持的注解" + annotationExpr.getName());
-                    }
-                    apiParams.add(apiParam);
-                } else if (annotationExpr.getName().getIdentifier().equals("RequestHeader")) {
-                    System.out.println(annotationExpr);
-                } else {
-                    log.warn("不支持的注解" + annotationExpr.getName());
+                List<ApiParam> apiParam = ParamPaser.parse(annotationExpr, parameter);
+                if (apiParam != null) {
+                    apiParams.addAll(apiParam);
                 }
-
             });
 
+        });
+
+        methodDeclaration.getAnnotations().forEach(annotationExpr -> {
+            List<ApiParam> apiParam = ParamPaser.parse(annotationExpr, null);
+            if (apiParam != null) {
+                apiParams.addAll(apiParam);
+            }
         });
         return apiParams;
     }
@@ -309,26 +271,4 @@ public class MyDocSns {
         }
         return Optional.empty();
     }
-
-
-    @Data
-    public static class ApiDoc {
-        private String title;
-        private String path;
-        private String httpMethod;
-        private List<ApiParam> params;
-        private String demoRequest;
-        private String returnValue;
-        private boolean deprecated;
-    }
-
-    @Data
-    public static class ApiParam {
-        private String name;
-        private String type;
-        private boolean required;
-        private String demoValue;
-        private String fromAnnotation;
-    }
-
 }
