@@ -4,7 +4,6 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MemberValuePair;
-import com.github.javaparser.javadoc.description.JavadocInlineTag;
 import com.sjy.hope.doc.annotations.RequestParms;
 import com.sjy.hope.doc.model.ApiParam;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,7 @@ public class RequestParmsParser implements AnnotationParser {
     @Override
     public List<ApiParam> parse(AnnotationExpr annotationExpr) {
         if (annotationExpr == null || !RequestParms.class.getSimpleName().equals(annotationExpr.getNameAsString())) {
-            log.info(annotationExpr.getNameAsString() + "不被处理");
+            log.debug(annotationExpr.getNameAsString() + "不被处理");
             return null;
         }
 

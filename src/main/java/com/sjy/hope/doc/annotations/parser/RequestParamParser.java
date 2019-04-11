@@ -4,6 +4,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.*;
 import com.sjy.hope.doc.model.ApiParam;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Collections;
@@ -19,11 +20,14 @@ import java.util.List;
 public class RequestParamParser implements AnnotationParser {
     @Override
     public List<ApiParam> parse(AnnotationExpr annotationExpr) {
-        if (annotationExpr == null || !RequestParam.class.getSimpleName().equals(annotationExpr.getNameAsString())) {
-            log.info(annotationExpr.getNameAsString() + "不被处理");
+        if (annotationExpr == null
+                || (!RequestParam.class.getSimpleName().equals(annotationExpr.getNameAsString())
+                && !RequestHeader.class.getSimpleName().equals(annotationExpr.getNameAsString()))) {
+            log.debug(annotationExpr.getNameAsString() + "不被处理");
             return null;
         }
         ApiParam apiParam = new ApiParam();
+        apiParam.setRequired(true);
         if (annotationExpr.isNormalAnnotationExpr()) {
             NormalAnnotationExpr normalAnnotationExpr = annotationExpr.asNormalAnnotationExpr();
             NodeList<MemberValuePair> pairs = normalAnnotationExpr.getPairs();

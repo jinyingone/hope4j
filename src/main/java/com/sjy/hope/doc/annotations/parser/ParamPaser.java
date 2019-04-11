@@ -28,19 +28,16 @@ public class ParamPaser {
             if (apiParams == null || apiParams.isEmpty()) {
                 continue;
             }
-            if (apiParams.size() == 1) {
+            if (apiParams.size() == 1 && parameter != null) {
                 ApiParam apiParam = apiParams.get(0);
-                if (parameter != null && apiParam.getName() == null) {
+                if (apiParam.getName() == null) {
                     apiParam.setName(parameter.getNameAsString());
                 }
-                if (parameter != null && apiParam.getType() == null) {
+                if (apiParam.getType() == null) {
                     apiParam.setType(parameter.getType().toString());
                 }
-                return apiParams;
-            } else if (apiParams.size() > 1) {
-                return apiParams;
             }
-
+            return apiParams;
         }
         return Collections.singletonList(defaultParam(parameter));
     }

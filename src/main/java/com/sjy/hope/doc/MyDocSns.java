@@ -41,10 +41,12 @@ public class MyDocSns {
         all.addAll(parse(mySelfPaths, Api.class, RequestParms.class));
 
 
-        String[] springmvcPaths = new String[]{"/home/jy/IdeaProjects/sns-user-api/user-api/src/main/java/com/sohu/sns/userapi/api/controller",
+        String[] springmvcPaths = new String[]{
+                "/home/jy/IdeaProjects/sns-user-api/user-api/src/main/java/com/sohu/sns/userapi/api/controller",
                 "/home/jy/IdeaProjects/sns-ant-moving/src/main/java/com/sohu/sns/antmv/controller",
                 "/home/jy/IdeaProjects/sns-rcmd-data-api/src/main/java/com/sohu/sns/rcmd/data/api/controller",
-                "/home/jy/IdeaProjects/sns_service_upload/src/main/java/com/sohu/sns/upload/controller"};
+                "/home/jy/IdeaProjects/sns_service_upload/src/main/java/com/sohu/sns/upload/controller"
+        };
         all.addAll(parse(springmvcPaths, RequestMapping.class, RequestMapping.class));
 
 
