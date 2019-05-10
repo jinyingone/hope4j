@@ -23,6 +23,10 @@ public class ApiParam {
      */
     private boolean required;
     /**
+     * 参数描述
+     */
+    private String desc;
+    /**
      * 取值示例
      */
     private String demoValue;

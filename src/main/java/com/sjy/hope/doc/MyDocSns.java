@@ -17,6 +17,7 @@ import com.sjy.hope.doc.annotations.RequestParms;
 import com.sjy.hope.doc.annotations.parser.ParamPaser;
 import com.sjy.hope.doc.model.ApiDoc;
 import com.sjy.hope.doc.model.ApiParam;
+import com.sjy.hope.doc.views.MdView;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -36,31 +37,47 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MyDocSns {
     public static void main(String[] args) throws IOException {
-        String[] mySelfPaths = new String[]{"/home/jy/IdeaProjects/sns_api/src/main/java/com/sohu/sns/api/controller/"};
-        List<ApiDoc> all = new ArrayList<>(512);
-        all.addAll(parse(mySelfPaths, Api.class, RequestParms.class));
-
 
         String[] springmvcPaths = new String[]{
-                "/home/jy/IdeaProjects/sns-user-api/user-api/src/main/java/com/sohu/sns/userapi/api/controller",
-                "/home/jy/IdeaProjects/sns-ant-moving/src/main/java/com/sohu/sns/antmv/controller",
-                "/home/jy/IdeaProjects/sns-rcmd-data-api/src/main/java/com/sohu/sns/rcmd/data/api/controller",
-                "/home/jy/IdeaProjects/sns_service_upload/src/main/java/com/sohu/sns/upload/controller"
+                "/home/jy/IdeaProjects/sns-user-api/user-api/src/main/java/com/sohu/sns/userapi/api/controller"
         };
-        all.addAll(parse(springmvcPaths, RequestMapping.class, RequestMapping.class));
+        List<ApiDoc> apiDocs = parse(springmvcPaths, RequestMapping.class, RequestMapping.class);
+        MdView mdView = new MdView();
+        apiDocs.forEach(apiDoc -> {
+            mdView.convert(apiDoc);
+        });
 
 
-        List<ApiDoc> deprecateds = all.stream().filter(apiDoc -> apiDoc.isDeprecated()).collect(Collectors.toList());
-        deprecateds.sort(Comparator.comparing(ApiDoc::getPath));
-        System.out.println("过期的接口数量:" + deprecateds.size());
-        deprecateds.forEach(System.out::println);
+    }
 
-        List<ApiDoc> unDeprecateds = all.stream().filter(apiDoc -> !apiDoc.isDeprecated()).collect(Collectors.toList());
-        unDeprecateds.sort(Comparator.comparing(ApiDoc::getPath));
-        System.out.println("推荐使用接口数量:" + unDeprecateds.size());
-        unDeprecateds.forEach(System.out::println);
+    private static String getApiPath(ApiDoc apiDoc) {
+        StringJoiner stringJoiner = new StringJoiner(";");
+        for (String path : apiDoc.getPath()) {
+            if (path.startsWith("/*")) {
+                stringJoiner.add(path.replace("/*", "/${appid}"));
+            } else if (path.startsWith("/{appid}")) {
+                stringJoiner.add(path.replace("/{appid}", "/${appid}"));
+            } else if (path.startsWith("/660001") || path.startsWith("/660000") || path.startsWith("/330002")) {
+                stringJoiner.add(path);
+            } else if (path.startsWith("/health")
+                    || path.equals("/")
+                    || path.equals("")
+                    || path.startsWith("/webHealth")
+                    || path.startsWith("config")) {
+                return "";
+            } else {
+                stringJoiner.add("/${appid}" + path);
+            }
+        }
+        return stringJoiner.toString();
+    }
 
-
+    private static String getTitle(ApiDoc apiDoc, int length) {
+        if (apiDoc.getTitle() == null) {
+            return "";
+        }
+        String subTitle = apiDoc.getTitle().substring(0, apiDoc.getTitle().length() > length ? length : apiDoc.getTitle().length());
+        return subTitle.replaceAll("\r|\n", " ");
     }
 
     private static List<ApiDoc> parse(String[] paths, Class clazzMapping, Class methodMapping) throws IOException {
@@ -122,14 +139,12 @@ public class MyDocSns {
                 log.warn(methodDeclaration.getNameAsString() + ":不存在注解" + methodMapping.getSimpleName());
                 continue;
             }
-            String api = getApi(clazzRequestMapping, methodRequestMapping);
-
             String httpMethod = getHttpMethod(clazzRequestMapping, methodRequestMapping, "");
             boolean isDeprecated = clazzNode.getAnnotationByName(Deprecated.class.getSimpleName()).isPresent()
                     || methodDeclaration.getAnnotationByName(Deprecated.class.getSimpleName()).isPresent();
 
             apiDoc.setHttpMethod(httpMethod);
-            apiDoc.setPath(api);
+            apiDoc.setPath(getApi(clazzRequestMapping, methodRequestMapping));
             apiDoc.setTitle(javadoc.getDescription().toText());
             apiDoc.setParams(params);
             apiDoc.setDeprecated(isDeprecated);
@@ -182,8 +197,8 @@ public class MyDocSns {
         return defalut;
     }
 
-    private static String getApi(Optional<AnnotationExpr> clazzRequestMapping, Optional<AnnotationExpr> methodRequestMapping) {
-        StringJoiner apiJoiner = new StringJoiner(";");
+    private static List<String> getApi(Optional<AnnotationExpr> clazzRequestMapping, Optional<AnnotationExpr> methodRequestMapping) {
+        List<String> paths = new ArrayList<>(8);
         List<String> clazzPaths = null;
         if (clazzRequestMapping.isPresent()) {
             clazzPaths = getPath(clazzRequestMapping);
@@ -197,16 +212,14 @@ public class MyDocSns {
             for (String clazzPath : clazzPaths) {
                 if (methodPaths != null && !methodPaths.isEmpty()) {
                     for (String methodPath : methodPaths) {
-                        apiJoiner.add(clazzPath + methodPath);
+                        paths.add(clazzPath + methodPath);
                     }
                 }
             }
         } else {
-            for (String methodPath : methodPaths) {
-                apiJoiner.add(methodPath);
-            }
+            paths.addAll(methodPaths);
         }
-        return apiJoiner.toString();
+        return paths;
     }
 
     private static List<String> getPath(Optional<AnnotationExpr> requestMapping) {
@@ -214,26 +227,22 @@ public class MyDocSns {
         List<String> paths = new ArrayList<>(8);
         if (annotationExpr.isSingleMemberAnnotationExpr()) {
             Expression memberValue = annotationExpr.asSingleMemberAnnotationExpr().getMemberValue();
-            String value = "";
             if (memberValue.isStringLiteralExpr()) {
-                value = memberValue.asStringLiteralExpr().getValue();
+                paths.add(memberValue.asStringLiteralExpr().getValue());
             } else {
                 List<Node> childNodes = memberValue.getChildNodes();
                 for (Node childNode : childNodes) {
-                    value += childNode.toString();
+                    paths.add(childNode.toString().replaceAll("\"", ""));
                 }
             }
-            paths.add(value);
         } else if (annotationExpr.isNormalAnnotationExpr()) {
             NodeList<MemberValuePair> pairs = annotationExpr.asNormalAnnotationExpr().getPairs();
             for (MemberValuePair pair : pairs) {
                 if (pair.getName().getIdentifier().equals("value") || pair.getName().getIdentifier().equals("path")) {
                     if (pair.getValue().isStringLiteralExpr()) {
                         paths.add(pair.getValue().asStringLiteralExpr().getValue());
-
                     } else if (pair.getValue().isArrayInitializerExpr()) {
                         NodeList<Expression> values = pair.getValue().asArrayInitializerExpr().getValues();
-                        String pt = "";
                         for (Expression value : values) {
                             paths.add(value.asStringLiteralExpr().getValue());
                         }
