@@ -3,7 +3,9 @@ package com.sjy.hope.doc.views;
 import com.sjy.hope.doc.model.ApiDoc;
 import com.sjy.hope.doc.model.ApiParam;
 import org.springframework.http.HttpMethod;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.net.URL;
 import java.nio.file.Files;
@@ -22,8 +24,8 @@ import java.util.stream.Collectors;
  * @create 2019-05-10 下午5:12
  **/
 public class MdView {
-    Pattern normalPattern = Pattern.compile("\\$\\{(\\w+)\\}");
-    private Pattern tableLineStart = Pattern.compile("^md_table_tr:(\\w+)\\s+");
+    Pattern normalPattern = Pattern.compile("\\$\\{(\\w+)+\\}");
+    private Pattern tableLineStart = Pattern.compile("^table_tr:(\\w+)\\s+");
 
     public void convert(ApiDoc apiDoc) {
         try {
@@ -41,21 +43,38 @@ public class MdView {
                     if (tabDatas == null) {
                         return "";
                     }
-                    int count = normalMatcher.groupCount();
                     StringJoiner stringJoiner = new StringJoiner("|");
+                    List<String> params = new ArrayList<>();
+                    for (; ; ) {
+                        params.add(normalMatcher.group(1));
+                        if (!normalMatcher.find()) {
+                            break;
+                        }
+                    }
                     for (Map<String, Object> tabData : tabDatas) {
-                        for (int i = 1; i <= count; i++) {
-                            stringJoiner.add(tabData.get(normalMatcher.group(i)).toString());
+                        for (String param : params) {
+                            Object o = tabData.get(param);
+                            if (o != null) {
+                                stringJoiner.add(o.toString());
+                            } else {
+                                stringJoiner.add("");
+                            }
                         }
                         stringJoiner.add("\n");
                     }
                     return stringJoiner.toString();
                 } else if (normalMatcher.find()) {
                     String group = normalMatcher.group(1);
-                    return normalMatcher.replaceFirst(map.get(group).toString());
+                    Object data = map.get(group);
+                    if (group != null && data != null) {
+                        return normalMatcher.replaceFirst(data.toString());
+                    }
+
                 }
                 return line;
-            }).collect(Collectors.toList());
+            })
+                    .filter(line -> !line.isEmpty())
+                    .collect(Collectors.toList());
 
             String infMd = apiDoc.getPath().get(0).replaceAll("/", "_") + ".md";
             Path infMdPath = Paths.get(infMd);
@@ -67,7 +86,7 @@ public class MdView {
             }
 
             for (String line : collect) {
-                line = line + "\n";
+                line = line + "  \n";
                 Files.write(infMdPath
                         , line.getBytes()
                         , StandardOpenOption.APPEND);
@@ -91,18 +110,26 @@ public class MdView {
 
         List<ApiParam> params = apiDoc.getParams();
         List<Map<String, Object>> headers = new ArrayList<>(8);
+        List<Map<String, Object>> urlParams = new ArrayList<>(8);
         for (ApiParam param : params) {
             if (param == null) {
                 continue;
             }
             String fromAnnotation = param.getFromAnnotation();
             Map<String, Object> pmap = new HashMap<>();
-            if (RequestHeader.class.getSimpleName().equals(fromAnnotation)) {
+            if (RequestHeader.class.getSimpleName().equals(fromAnnotation)
+                    || RequestAttribute.class.getSimpleName().equals(fromAnnotation)) {
                 pmap.put("header_name", param.getName());
                 pmap.put("header_value_type", param.getType());
                 pmap.put("header_required", param.isRequired());
                 pmap.put("header_desc", param.getDesc());
                 headers.add(pmap);
+            } else if (RequestParam.class.getSimpleName().equals(fromAnnotation)) {
+                pmap.put("param_name", param.getName());
+                pmap.put("param_value_type", param.getType());
+                pmap.put("param_required", param.isRequired());
+                pmap.put("param_desc", param.getDesc());
+                urlParams.add(pmap);
             }
         }
         map.put("header", headers);

@@ -4,11 +4,14 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.*;
 import com.sjy.hope.doc.model.ApiParam;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 请求参数解析
@@ -18,11 +21,18 @@ import java.util.List;
  **/
 @Slf4j
 public class RequestParamParser implements AnnotationParser {
+    private static final Set<String> supportAnnotations = new HashSet<>();
+
+    static {
+        supportAnnotations.add(RequestParam.class.getSimpleName());
+        supportAnnotations.add(RequestAttribute.class.getSimpleName());
+        supportAnnotations.add(RequestHeader.class.getSimpleName());
+    }
+
     @Override
     public List<ApiParam> parse(AnnotationExpr annotationExpr) {
-        if (annotationExpr == null
-                || (!RequestParam.class.getSimpleName().equals(annotationExpr.getNameAsString())
-                && !RequestHeader.class.getSimpleName().equals(annotationExpr.getNameAsString()))) {
+        if (annotationExpr == null &&
+                !supportAnnotations.contains(annotationExpr.getNameAsString())) {
             log.debug(annotationExpr.getNameAsString() + "不被处理");
             return null;
         }

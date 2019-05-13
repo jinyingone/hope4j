@@ -15,12 +15,13 @@ URL|${inf_path}
 #### 请求header
 参数名 | 类型 | 必须 | 描述 
 ---|---|---|---
-md_table_tr:header ${header_name}|${header_value_type}|${header_required}|${header_desc}   
+table_tr:header ${header_name}|${header_value_type}|${header_required}|${header_desc}   
 
 #### 请求参数
 参数名 | 类型 | 必须 | 描述 
 ---|---|---|---
-$param_name|$param_value_type|$param_required|$param_desc
+table_tr:param ${param_name}|${param_value_type}|${param_required}|${param_desc}
+请求sig必须参数|||
 
 #### 返回结果
 ##### 结果示例
