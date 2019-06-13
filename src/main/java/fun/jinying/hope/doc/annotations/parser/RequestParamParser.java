@@ -1,8 +1,8 @@
-package com.sjy.hope.doc.annotations.parser;
+package fun.jinying.hope.doc.annotations.parser;
 
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.*;
-import com.sjy.hope.doc.model.ApiParam;
+import fun.jinying.hope.doc.model.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestHeader;

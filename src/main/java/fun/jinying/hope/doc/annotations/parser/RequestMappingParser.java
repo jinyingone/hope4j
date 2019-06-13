@@ -1,4 +1,4 @@
-package com.sjy.hope.doc.annotations.parser;
+package fun.jinying.hope.doc.annotations.parser;
 
 /**
  * requestMapping 解析器

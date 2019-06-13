@@ -1,11 +1,11 @@
-package com.sjy.hope.doc.annotations.parser;
+package fun.jinying.hope.doc.annotations.parser;
 
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MemberValuePair;
-import com.sjy.hope.doc.annotations.RequestParms;
-import com.sjy.hope.doc.model.ApiParam;
+import fun.jinying.hope.doc.annotations.RequestParms;
+import fun.jinying.hope.doc.model.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;

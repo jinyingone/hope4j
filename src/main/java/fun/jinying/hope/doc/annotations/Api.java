@@ -1,4 +1,4 @@
-package com.sjy.hope.doc.annotations;
+package fun.jinying.hope.doc.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

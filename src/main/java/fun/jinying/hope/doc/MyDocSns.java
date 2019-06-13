@@ -1,4 +1,4 @@
-package com.sjy.hope.doc;
+package fun.jinying.hope.doc;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -12,12 +12,10 @@ import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.javadoc.Javadoc;
 import com.github.javaparser.javadoc.JavadocBlockTag;
-import com.sjy.hope.doc.annotations.Api;
-import com.sjy.hope.doc.annotations.RequestParms;
-import com.sjy.hope.doc.annotations.parser.ParamPaser;
-import com.sjy.hope.doc.model.ApiDoc;
-import com.sjy.hope.doc.model.ApiParam;
-import com.sjy.hope.doc.views.MdView;
+import fun.jinying.hope.doc.annotations.parser.ParamPaser;
+import fun.jinying.hope.doc.model.ApiDoc;
+import fun.jinying.hope.doc.model.ApiParam;
+import fun.jinying.hope.doc.views.MdView;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
 

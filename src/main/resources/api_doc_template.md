@@ -24,11 +24,6 @@ table_tr:param ${param_name}|${param_value_type}|${param_required}|${param_desc}
 请求sig必须参数|||
 
 #### 返回结果
-##### 结果示例
-```
-    $return_result
-
-```
 ##### 结果说明
 参数名 | 类型 | 必须 | 描述 
 ---|---|---|---
@@ -39,6 +34,11 @@ $return_result_name|$return_result_value_type|$return_result_required|$return_re
 ---|---
 $return_code|$return_code_desc
 
+##### 结果示例
+```
+    $return_result
+
+```
 ### 接口版本列表
 版本号 | 链接
 ---|---

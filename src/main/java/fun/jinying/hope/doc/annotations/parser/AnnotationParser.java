@@ -1,7 +1,7 @@
-package com.sjy.hope.doc.annotations.parser;
+package fun.jinying.hope.doc.annotations.parser;
 
 import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.sjy.hope.doc.model.ApiParam;
+import fun.jinying.hope.doc.model.ApiParam;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
-package com.sjy.hope.doc.views;
+package fun.jinying.hope.doc.views;
 
-import com.sjy.hope.doc.model.ApiDoc;
-import com.sjy.hope.doc.model.ApiParam;
+import fun.jinying.hope.doc.model.ApiDoc;
+import fun.jinying.hope.doc.model.ApiParam;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestHeader;

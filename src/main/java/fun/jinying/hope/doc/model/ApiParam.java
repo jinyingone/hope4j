@@ -1,4 +1,4 @@
-package com.sjy.hope.doc.model;
+package fun.jinying.hope.doc.model;
 
 import lombok.Data;
 
