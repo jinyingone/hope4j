@@ -38,6 +38,7 @@ public class MyDoc {
     public static void main(String[] args) throws IOException {
 
         String[] springmvcPaths = new String[]{
+                "/home/jy/IdeaProjects/hope4j/src/test/java/fun/jinying/hope/doc/ApiControllerTest.java"
         };
         List<ApiDoc> apiDocs = parse(springmvcPaths, RequestMapping.class, RequestMapping.class);
         MdView mdView = new MdView();
@@ -147,8 +148,6 @@ public class MyDoc {
             apiDoc.setParams(params);
             apiDoc.setDeprecated(isDeprecated);
             List<String> path = apiDoc.getPath();
-            String s = HttpUtils.doRequest("" + path.get(0), Collections.singletonMap("appid", "580000"), Collections.emptyMap(), "580000");
-            System.out.println(s);
 
             docs.add(apiDoc);
         }
