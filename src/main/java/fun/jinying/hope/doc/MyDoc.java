@@ -15,6 +15,7 @@ import com.github.javaparser.javadoc.JavadocBlockTag;
 import fun.jinying.hope.doc.annotations.parser.ParamPaser;
 import fun.jinying.hope.doc.model.ApiDoc;
 import fun.jinying.hope.doc.model.ApiParam;
+import fun.jinying.hope.doc.utils.HttpUtils;
 import fun.jinying.hope.doc.views.MdView;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,11 +34,10 @@ import java.util.stream.Collectors;
  * @create 2019-01-24 下午5:26
  **/
 @Slf4j
-public class MyDocSns {
+public class MyDoc {
     public static void main(String[] args) throws IOException {
 
         String[] springmvcPaths = new String[]{
-                "/home/jy/IdeaProjects/sns-user-api/user-api/src/main/java/com/sohu/sns/userapi/api/controller"
         };
         List<ApiDoc> apiDocs = parse(springmvcPaths, RequestMapping.class, RequestMapping.class);
         MdView mdView = new MdView();
@@ -146,6 +146,10 @@ public class MyDocSns {
             apiDoc.setTitle(javadoc.getDescription().toText());
             apiDoc.setParams(params);
             apiDoc.setDeprecated(isDeprecated);
+            List<String> path = apiDoc.getPath();
+            String s = HttpUtils.doRequest("" + path.get(0), Collections.singletonMap("appid", "580000"), Collections.emptyMap(), "580000");
+            System.out.println(s);
+
             docs.add(apiDoc);
         }
         return docs;

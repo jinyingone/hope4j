@@ -104,7 +104,7 @@ public class MdView {
         String httpMethod = apiDoc.getHttpMethod() == "" ? HttpMethod.GET.name() + "/" + HttpMethod.POST.name() : apiDoc.getHttpMethod();
         map.put("inf_name", apiPath);
         map.put("inf_desc", apiDoc.getTitle().replaceAll("\n", "<br>"));
-        map.put("inf_hosts", "cs-dev.sns.sohu.com");
+        map.put("inf_hosts", "127.0.0.1:8080");
         map.put("inf_path", apiPath);
         map.put("inf_http_method", httpMethod);
 
