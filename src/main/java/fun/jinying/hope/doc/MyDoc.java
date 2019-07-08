@@ -49,36 +49,6 @@ public class MyDoc {
 
     }
 
-    private static String getApiPath(ApiDoc apiDoc) {
-        StringJoiner stringJoiner = new StringJoiner(";");
-        for (String path : apiDoc.getPath()) {
-            if (path.startsWith("/*")) {
-                stringJoiner.add(path.replace("/*", "/${appid}"));
-            } else if (path.startsWith("/{appid}")) {
-                stringJoiner.add(path.replace("/{appid}", "/${appid}"));
-            } else if (path.startsWith("/660001") || path.startsWith("/660000") || path.startsWith("/330002")) {
-                stringJoiner.add(path);
-            } else if (path.startsWith("/health")
-                    || path.equals("/")
-                    || path.equals("")
-                    || path.startsWith("/webHealth")
-                    || path.startsWith("config")) {
-                return "";
-            } else {
-                stringJoiner.add("/${appid}" + path);
-            }
-        }
-        return stringJoiner.toString();
-    }
-
-    private static String getTitle(ApiDoc apiDoc, int length) {
-        if (apiDoc.getTitle() == null) {
-            return "";
-        }
-        String subTitle = apiDoc.getTitle().substring(0, apiDoc.getTitle().length() > length ? length : apiDoc.getTitle().length());
-        return subTitle.replaceAll("\r|\n", " ");
-    }
-
     private static List<ApiDoc> parse(String[] paths, Class clazzMapping, Class methodMapping) throws IOException {
         List<ApiDoc> all = new ArrayList<>(64);
         for (String path : paths) {
